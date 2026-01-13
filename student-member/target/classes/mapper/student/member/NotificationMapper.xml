@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.student.member.mapper.NotificationMapper">
+
+    <select id="selectByUserId" resultType="com.ruoyi.student.member.domain.Notification">
+        SELECT
+        id,
+        user_id as userId,
+        title,
+        content,
+        type,
+        is_read as isRead,
+        related_order_id as relatedOrderId,
+        created_at as createdAt
+        FROM biz_user_notification
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <update id="updateIsRead">
+        UPDATE biz_user_notification
+        SET is_read = #{isRead}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

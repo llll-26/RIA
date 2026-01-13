@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.student.mapper.BizUserRewardMapper">
+    
+    <resultMap type="BizUserReward" id="BizUserRewardResult">
+        <result property="id"    column="id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="rewardId"    column="reward_id"    />
+        <result property="pointsUsed"    column="points_used"    />
+        <result property="code"    column="code"    />
+        <result property="status"    column="status"    />
+        <result property="createdAt"    column="created_at"    />
+    </resultMap>
+
+    <sql id="selectBizUserRewardVo">
+        select id, user_id, reward_id, points_used, code, status, created_at from biz_user_reward
+    </sql>
+
+    <select id="selectBizUserRewardList" parameterType="BizUserReward" resultMap="BizUserRewardResult">
+        <include refid="selectBizUserRewardVo"/>
+        <where>  
+            <if test="id != null "> and id = #{id}</if>
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="rewardId != null "> and reward_id = #{rewardId}</if>
+            <if test="pointsUsed != null "> and points_used = #{pointsUsed}</if>
+            <if test="code != null  and code != ''"> and code = #{code}</if>
+            <if test="status != null "> and status = #{status}</if>
+            <if test="createdAt != null "> and created_at = #{createdAt}</if>
+        </where>
+    </select>
+    
+    <select id="selectBizUserRewardById" parameterType="Long" resultMap="BizUserRewardResult">
+        <include refid="selectBizUserRewardVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertBizUserReward" parameterType="BizUserReward" useGeneratedKeys="true" keyProperty="id">
+        insert into biz_user_reward
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="rewardId != null">reward_id,</if>
+            <if test="pointsUsed != null">points_used,</if>
+            <if test="code != null">code,</if>
+            <if test="status != null">status,</if>
+            <if test="createdAt != null">created_at,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="rewardId != null">#{rewardId},</if>
+            <if test="pointsUsed != null">#{pointsUsed},</if>
+            <if test="code != null">#{code},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBizUserReward" parameterType="BizUserReward">
+        update biz_user_reward
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="rewardId != null">reward_id = #{rewardId},</if>
+            <if test="pointsUsed != null">points_used = #{pointsUsed},</if>
+            <if test="code != null">code = #{code},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBizUserRewardById" parameterType="Long">
+        delete from biz_user_reward where id = #{id}
+    </delete>
+
+    <delete id="deleteBizUserRewardByIds" parameterType="String">
+        delete from biz_user_reward where id in 
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

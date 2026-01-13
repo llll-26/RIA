@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.student.member.mapper.UserFeedbackMapper">
+
+    <insert id="insert" parameterType="com.ruoyi.student.member.domain.UserFeedback"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO biz_user_feedback (
+            user_id,
+            title,
+            content,
+            contact,
+            created_at
+        ) VALUES (
+                     #{userId},
+                     #{title},
+                     #{content},
+                     #{contact},
+                     NOW()
+                 )
+    </insert>
+
+</mapper>

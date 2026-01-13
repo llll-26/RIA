@@ -1,0 +1,419 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.student.member.mapper.SkillOrderMapper">
+
+    <!-- 字段映射-->
+    <resultMap id="BaseResultMap" type="com.ruoyi.student.member.domain.SkillOrder">
+        <id column="id" property="id"/>
+        <result column="skill_id" property="skillId"/>
+        <result column="requester_id" property="requesterId"/>
+        <result column="provider_id" property="providerId"/>
+        <result column="appointment_time" property="appointmentTime"/>
+        <result column="location_type" property="locationType"/>
+        <result column="location_detail" property="locationDetail"/>
+        <result column="status" property="status"/>
+        <result column="proof_generated" property="proofGenerated"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="is_read" property="isRead"/>
+        <result property="proofUrl" column="proof_url"/>
+        <result property="hasCommented" column="hasCommented"/>
+        <result property="score" column="score"/>
+        <result property="comment" column="comment"/>
+        <result property="skillTitle" column="skillTitle"/>
+        <result property="requesterNickName" column="requesterNickName"/>
+        <result property="providerNickName" column="providerNickName"/>
+        <result property="learnerPoints" column="learnerPoints"/>
+        <result property="providerPoints" column="providerPoints"/>
+    </resultMap>
+
+    <!-- 插入订单 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO biz_skill_order (
+            skill_id,
+            requester_id,
+            provider_id,
+            appointment_time,
+            location_type,
+            location_detail,
+            status,
+            proof_generated,
+            created_at
+        ) VALUES (
+                     #{skillId},
+                     #{requesterId},
+                     #{providerId},
+                     #{appointmentTime},
+                     #{locationType},
+                     #{locationDetail},
+                     #{status},
+                     #{proofGenerated},
+                     #{createdAt}
+                 )
+    </insert>
+    <!-- 根据 ID 查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+            o.*,
+            s.title AS skillTitle,
+            u1.nick_name AS requesterNickName,
+            u2.nick_name AS providerNickName,
+            pr_learner.point_value AS learnerPoints,
+            pr_provider.point_value AS providerPoints
+        FROM biz_skill_order o
+                 LEFT JOIN sys_user u1 ON u1.user_id = o.requester_id
+                 LEFT JOIN sys_user u2 ON u2.user_id = o.provider_id
+                 LEFT JOIN biz_skill_service s ON s.id = o.skill_id
+                 LEFT JOIN biz_point_rule pr_learner
+                           ON s.category_id = pr_learner.category_id AND pr_learner.role_type = 2
+                 LEFT JOIN biz_point_rule pr_provider
+                           ON s.category_id = pr_provider.category_id AND pr_provider.role_type = 1
+        WHERE o.id = #{id}
+    </select>
+
+    <!-- 根据请求者ID查询-->
+    <select id="selectByRequesterId" resultMap="BaseResultMap">
+        SELECT
+            o.*,
+            u.nick_name AS providerNickName,
+            s.title AS skillTitle,
+            pr_learner.point_value AS learnerPoints,
+            pr_provider.point_value AS providerPoints
+        FROM biz_skill_order o
+                 LEFT JOIN sys_user u ON u.user_id = o.provider_id
+                 LEFT JOIN biz_skill_service s ON s.id = o.skill_id
+                 LEFT JOIN biz_point_rule pr_learner
+                           ON s.category_id = pr_learner.category_id AND pr_learner.role_type = 2
+                 LEFT JOIN biz_point_rule pr_provider
+                           ON s.category_id = pr_provider.category_id AND pr_provider.role_type = 1
+        WHERE o.requester_id = #{requesterId}
+        ORDER BY o.appointment_time DESC
+    </select>
+
+    <!-- 根据提供者ID查询 -->
+    <select id="selectByProviderId" resultMap="BaseResultMap">
+        SELECT
+            o.*,
+            u.nick_name AS requesterNickName,
+            s.title AS skillTitle,
+            pr_learner.point_value AS learnerPoints,
+            pr_provider.point_value AS providerPoints
+        FROM biz_skill_order o
+                 LEFT JOIN sys_user u ON u.user_id = o.requester_id
+                 LEFT JOIN biz_skill_service s ON s.id = o.skill_id
+                 LEFT JOIN biz_point_rule pr_learner
+                           ON s.category_id = pr_learner.category_id AND pr_learner.role_type = 2
+                 LEFT JOIN biz_point_rule pr_provider
+                           ON s.category_id = pr_provider.category_id AND pr_provider.role_type = 1
+        WHERE o.provider_id = #{providerId}
+        ORDER BY o.appointment_time DESC
+    </select>
+
+    <select id="existsConflict" resultType="boolean">
+        SELECT EXISTS (
+            SELECT 1 FROM biz_skill_order
+            WHERE provider_id = #{providerId}
+              AND status NOT IN (2, 3)
+              AND appointment_time &lt; DATE_ADD(#{startTime}, INTERVAL #{duration} HOUR)
+              AND DATE_ADD(appointment_time, INTERVAL duration_hours HOUR) > #{startTime}
+        )
+    </select>
+    <select id="existsByRequesterIdAndSkillIdAndStatusIn" resultType="boolean">
+        SELECT EXISTS (
+        SELECT 1
+        FROM biz_skill_order
+        WHERE requester_id = #{requesterId}
+        AND skill_id = #{skillId}
+        AND status IN
+        <foreach collection="statuses" item="status" open="(" separator="," close=")">
+            #{status}
+        </foreach>
+        )
+    </select>
+    <!--查询我的订单，含技能标题、提供者昵称等-->
+    <select id="selectMyOrdersWithDetails" resultType="com.ruoyi.student.member.domain.vo.OrderVO">
+        SELECT
+            o.id,
+            s.title AS skillTitle,
+            s.description,
+            s.cover_img AS coverImg,
+            u.nick_name AS providerNickName,
+            o.appointment_time AS appointmentTime,
+            o.location_detail AS locationDetail,
+            o.status,
+            pr.point_value AS pointsPerHour
+        FROM biz_skill_order o
+                 INNER JOIN biz_skill_service s ON o.skill_id = s.id
+                 INNER JOIN sys_user u ON o.provider_id = u.user_id
+                 LEFT JOIN biz_point_rule pr ON s.category_id = pr.category_id AND pr.role_type = 2
+        WHERE o.requester_id = #{requesterId}
+        ORDER BY o.created_at DESC
+    </select>
+
+    <select id="selectMyOrderDetailAsRequester" resultType="com.ruoyi.student.member.domain.vo.OrderVO">
+        SELECT
+            so.id,
+            so.skill_id AS skillId,
+            so.requester_id AS requesterId,
+            so.provider_id AS providerId,
+            so.appointment_time AS appointmentTime,
+            so.status,
+            so.location_detail AS locationDetail,
+            so.proof_url AS proofUrl,
+            so.is_read AS isRead,
+            s.title AS skillTitle,
+            s.description,
+            s.cover_img AS coverImg,
+            provider_u.nick_name AS providerNickName,
+            requester_u.nick_name AS requesterNickName,
+            pr.point_value AS learnerPoints,
+            NULL AS providerPoints
+        FROM biz_skill_order so
+                 LEFT JOIN biz_skill_service s ON so.skill_id = s.id
+                 LEFT JOIN sys_user provider_u ON so.provider_id = provider_u.user_id
+                 LEFT JOIN sys_user requester_u ON so.requester_id = requester_u.user_id
+                 LEFT JOIN biz_point_rule pr ON s.category_id = pr.category_id AND pr.role_type = 2
+        WHERE so.id = #{orderId} AND so.requester_id = #{requesterId}
+    </select>
+    <select id="selectMyOrderDetailAsProvider" resultType="com.ruoyi.student.member.domain.vo.OrderVO">
+        SELECT
+            so.id,
+            so.skill_id AS skillId,
+            so.requester_id AS requesterId,
+            so.provider_id AS providerId,
+            so.appointment_time AS appointmentTime,
+            so.status,
+            so.location_detail AS locationDetail,
+            so.proof_url AS proofUrl,
+            s.title AS skillTitle,
+            s.description,
+            s.cover_img AS coverImg,
+            provider_u.nick_name AS providerNickName,
+            requester_u.nick_name AS requesterNickName,
+            NULL AS learnerPoints,
+            pr.point_value AS providerPoints
+        FROM biz_skill_order so
+                 LEFT JOIN biz_skill_service s ON so.skill_id = s.id
+                 LEFT JOIN sys_user requester_u ON so.requester_id = requester_u.user_id
+                 LEFT JOIN sys_user provider_u ON so.provider_id = provider_u.user_id
+                 LEFT JOIN biz_point_rule pr ON s.category_id = pr.category_id AND pr.role_type = 1
+        WHERE so.id = #{orderId} AND so.provider_id = #{providerId}
+    </select>
+    <!-- 我发起的订单列表（含积分、昵称、技能标题） -->
+    <select id="listMyRequestedOrders" resultMap="BaseResultMap">
+        SELECT
+            o.*,
+            s.title AS skillTitle,
+            provider_u.nick_name AS providerNickName,
+            requester_u.nick_name AS requesterNickName,
+            pr_learner.point_value AS learnerPoints,
+            pr_provider.point_value AS providerPoints
+        FROM biz_skill_order o
+                 LEFT JOIN biz_skill_service s ON o.skill_id = s.id
+                 LEFT JOIN sys_user provider_u ON o.provider_id = provider_u.user_id
+                 LEFT JOIN sys_user requester_u ON o.requester_id = requester_u.user_id
+                 LEFT JOIN biz_point_rule pr_learner
+                           ON s.category_id = pr_learner.category_id AND pr_learner.role_type = 2
+                 LEFT JOIN biz_point_rule pr_provider
+                           ON s.category_id = pr_provider.category_id AND pr_provider.role_type = 1
+        WHERE o.requester_id = #{requesterId}
+        ORDER BY o.appointment_time DESC
+    </select>
+
+    <!-- 别人预约我的订单列表（含积分、昵称、技能标题） -->
+    <select id="listMyProvidedOrders" resultMap="BaseResultMap">
+        SELECT
+            o.*,
+            s.title AS skillTitle,
+            provider_u.nick_name AS providerNickName,
+            requester_u.nick_name AS requesterNickName,
+            pr_learner.point_value AS learnerPoints,
+            pr_provider.point_value AS providerPoints
+        FROM biz_skill_order o
+                 LEFT JOIN biz_skill_service s ON o.skill_id = s.id
+                 LEFT JOIN sys_user provider_u ON o.provider_id = provider_u.user_id
+                 LEFT JOIN sys_user requester_u ON o.requester_id = requester_u.user_id
+                 LEFT JOIN biz_point_rule pr_learner
+                           ON s.category_id = pr_learner.category_id AND pr_learner.role_type = 2
+                 LEFT JOIN biz_point_rule pr_provider
+                           ON s.category_id = pr_provider.category_id AND pr_provider.role_type = 1
+        WHERE o.provider_id = #{providerId}
+        ORDER BY o.appointment_time DESC
+    </select>
+
+    <update id="updateById" parameterType="com.ruoyi.student.member.domain.SkillOrder">
+        UPDATE biz_skill_order
+        <set>
+            <if test="skillId != null">skill_id = #{skillId},</if>
+            <if test="requesterId != null">requester_id = #{requesterId},</if>
+            <if test="providerId != null">provider_id = #{providerId},</if>
+            <if test="appointmentTime != null">appointment_time = #{appointmentTime},</if>
+            <if test="locationType != null">location_type = #{locationType},</if>
+            <if test="locationDetail != null and locationDetail != ''">location_detail = #{locationDetail},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="proofGenerated != null">proof_generated = #{proofGenerated},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="proofUrl != null and proofUrl != ''">proof_url = #{proofUrl},</if>
+            <if test="isRead != null">is_read = #{isRead},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    <!-- 我发起的已完成订单 -->
+    <select id="selectMyRequestedCompletedOrders" resultType="com.ruoyi.student.member.domain.SkillOrder">
+        SELECT
+            o.id,
+            o.skill_id AS skillId,
+            o.requester_id AS requesterId,
+            o.provider_id AS providerId,
+            o.appointment_time AS appointmentTime,
+            o.location_detail AS locationDetail,
+            o.status,
+            o.proof_url AS proofUrl,
+            o.created_at AS createdAt,
+
+            r.rating AS score,
+            r.comment AS comment,
+            CASE WHEN r.id IS NOT NULL THEN 1 ELSE 0 END AS hasCommented,
+
+            s.title AS skillTitle,
+            u1.nick_name AS requesterNickName,
+            u2.nick_name AS providerNickName,
+
+            -- 学习者积分（role_type=2）
+            pr_learner.point_value AS learnerPoints,
+            -- 提供者积分（role_type=1）
+            pr_provider.point_value AS providerPoints
+
+        FROM biz_skill_order o
+                 LEFT JOIN biz_skill_service s ON o.skill_id = s.id
+                 LEFT JOIN biz_point_rule pr_learner
+                           ON s.category_id = pr_learner.category_id AND pr_learner.role_type = 2
+                 LEFT JOIN biz_point_rule pr_provider
+                           ON s.category_id = pr_provider.category_id AND pr_provider.role_type = 1
+                 LEFT JOIN biz_service_review r
+                           ON r.order_id = o.id AND r.reviewer_id = o.requester_id
+                 LEFT JOIN sys_user u1 ON u1.user_id = o.requester_id
+                 LEFT JOIN sys_user u2 ON u2.user_id = o.provider_id
+        WHERE o.requester_id = #{userId} AND o.status = 4
+    </select>
+
+    <!-- 别人预约我的已完成订单 -->
+    <select id="selectMyProvidedCompletedOrders" resultType="com.ruoyi.student.member.domain.SkillOrder">
+        SELECT
+            o.id,
+            o.skill_id AS skillId,
+            o.requester_id AS requesterId,
+            o.provider_id AS providerId,
+            o.appointment_time AS appointmentTime,
+            o.location_detail AS locationDetail,
+            o.status,
+            o.proof_url AS proofUrl,
+            o.created_at AS createdAt,
+            o.duration_hours AS durationHours,
+            r.rating AS score,
+            r.comment AS comment,
+            0 AS hasCommented,
+
+            s.title AS skillTitle,
+            u1.nick_name AS requesterNickName,
+            u2.nick_name AS providerNickName,
+
+            -- 学习者积分（role_type=2）
+            pr_learner.point_value AS learnerPoints,
+            -- 提供者积分（role_type=1）
+            pr_provider.point_value AS providerPoints
+
+        FROM biz_skill_order o
+                 LEFT JOIN biz_skill_service s ON o.skill_id = s.id
+                 LEFT JOIN biz_point_rule pr_learner
+                           ON s.category_id = pr_learner.category_id AND pr_learner.role_type = 2
+                 LEFT JOIN biz_point_rule pr_provider
+                           ON s.category_id = pr_provider.category_id AND pr_provider.role_type = 1
+                 LEFT JOIN biz_service_review r
+                           ON r.order_id = o.id AND r.reviewer_id = o.requester_id
+                 LEFT JOIN sys_user u1 ON u1.user_id = o.requester_id
+                 LEFT JOIN sys_user u2 ON u2.user_id = o.provider_id
+        WHERE o.provider_id = #{userId} AND o.status = 4
+    </select>
+
+    <select id="findById" resultType="com.ruoyi.student.member.domain.SkillOrder">
+        SELECT
+        o.id,
+        o.requester_id AS requesterId,
+        o.provider_id AS providerId,
+        o.status,
+        s.title AS skillTitle,
+        o.location_detail AS locationDetail,
+        o.appointment_time AS appointmentTime,
+        o.proof_url AS proofUrl
+        FROM biz_skill_order o
+        LEFT JOIN biz_skill_service s ON o.skill_id = s.id
+        WHERE o.id = #{id}
+    </select>
+    <select id="countByProviderId" resultType="long">
+        SELECT COUNT(*) FROM biz_skill_order WHERE provider_id = #{providerId}
+    </select>
+
+    <select id="countByRequesterId" resultType="long">
+        SELECT COUNT(*) FROM biz_skill_order WHERE requester_id = #{requesterId}
+    </select>
+    <!-- 合并查询：用户作为 requester 或 provider 的所有已完成订单，按 appointment_time 倒序 -->
+    <select id="selectMyCompletedOrdersPage" resultType="com.ruoyi.student.member.domain.vo.OrderVO">
+        SELECT
+            o.id,
+            o.skill_id AS skillId,
+            o.requester_id AS requesterId,
+            o.provider_id AS providerId,
+            o.appointment_time AS appointmentTime,
+            o.location_type AS teachingMethod,
+            o.status,
+            o.proof_url AS proofUrl,
+            o.created_at AS createdAt,
+            o.duration_hours AS durationHours,
+
+            s.title AS skillTitle,
+            s.description,
+
+            provider_u.nick_name AS providerNickName,
+            requester_u.nick_name AS requesterNickName,
+
+            provider_u.avatar AS providerAvatar,
+            requester_u.avatar AS requesterAvatar,
+
+            pr_provider.point_value AS providerPoints,
+            pr_learner.point_value AS learnerPoints,
+
+            r.rating AS score,
+            r.comment,
+            CASE WHEN r.id IS NOT NULL THEN 1 ELSE 0 END AS hasCommented
+
+        FROM biz_skill_order o
+                 LEFT JOIN biz_skill_service s ON o.skill_id = s.id
+                 LEFT JOIN sys_user provider_u ON o.provider_id = provider_u.user_id
+                 LEFT JOIN sys_user requester_u ON o.requester_id = requester_u.user_id
+                 LEFT JOIN biz_point_rule pr_provider
+                           ON s.category_id = pr_provider.category_id AND pr_provider.role_type = 1
+                 LEFT JOIN biz_point_rule pr_learner
+                           ON s.category_id = pr_learner.category_id AND pr_learner.role_type = 2
+                 LEFT JOIN biz_service_review r
+                           ON r.order_id = o.id AND r.reviewer_id = o.requester_id
+        WHERE (o.requester_id = #{userId} OR o.provider_id = #{userId})
+          AND o.status = 4
+        ORDER BY o.appointment_time DESC
+    </select>
+    <select id="selectCountPendingByProvider" resultType="int">
+        SELECT COUNT(*)
+        FROM biz_skill_order
+        WHERE provider_id = #{providerId}
+          AND status = 0
+    </select>
+    <select id="selectCountConfirmedUnreadByRequester" resultType="int">
+        SELECT COUNT(1)
+        FROM biz_skill_order
+        WHERE requester_id = #{requesterId}
+        AND status = 1
+        AND is_read = 0
+    </select>
+
+</mapper>

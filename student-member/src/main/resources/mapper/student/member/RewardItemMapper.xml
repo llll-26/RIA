@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.student.member.mapper.RewardItemMapper">
+
+    <!-- 查询所有上架的奖品 -->
+    <select id="selectList" resultType="com.ruoyi.student.member.domain.RewardItem">
+        SELECT
+        id,
+        name,
+        points_required AS pointsRequired,
+        type,
+        stock,
+        is_active AS isActive,
+        description,
+        image_url AS imageUrl
+        FROM biz_reward_item
+        WHERE is_active = 1
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询单个奖品 -->
+    <select id="selectById" resultType="com.ruoyi.student.member.domain.RewardItem">
+        SELECT
+            id,
+            name,
+            points_required AS pointsRequired,
+            type,
+            stock,
+            is_active AS isActive,
+            description,
+            image_url AS imageUrl
+        FROM biz_reward_item
+        WHERE id = #{id}
+    </select>
+<!--    查询单个奖品-->
+    <select id="selectAvailableItems" resultType="com.ruoyi.student.member.domain.RewardItem">
+        SELECT
+            id,
+            name,
+            points_required AS pointsRequired,
+            type,
+            stock,
+            is_active AS isActive,
+            description,
+            image_url AS imageUrl
+        FROM biz_reward_item
+        WHERE is_active = 1
+        ORDER BY points_required ASC
+    </select>
+<!--    安全扣减库存-->
+    <update id="updateStock">
+        UPDATE biz_reward_item
+        SET stock = stock - #{quantity}
+        WHERE id = #{id}
+        AND stock >= #{quantity}
+        AND stock != -1
+        AND stock >= #{quantity}
+    </update>
+
+</mapper>

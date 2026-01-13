@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.student.mapper.BizUserNotificationMapper">
+
+    <resultMap type="BizUserNotification" id="BizUserNotificationResult">
+        <result property="id"    column="id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="title"    column="title"    />
+        <result property="content"    column="content"    />
+        <result property="type"    column="type"    />
+        <result property="isRead"    column="is_read"    />
+        <result property="relatedOrderId"    column="related_order_id"    />
+        <result property="createdAt"    column="created_at"    />
+    </resultMap>
+
+    <sql id="selectBizUserNotificationVo">
+        select id, user_id, title, content, type, is_read, related_order_id, created_at from biz_user_notification
+    </sql>
+
+    <select id="selectBizUserNotificationList" parameterType="BizUserNotification" resultMap="BizUserNotificationResult">
+        <include refid="selectBizUserNotificationVo"/>
+        <where>
+            <if test="id != null "> and id = #{id}</if>
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="title != null  and title != ''"> and title = #{title}</if>
+            <if test="content != null  and content != ''"> and content = #{content}</if>
+            <if test="type != null "> and type = #{type}</if>
+            <if test="isRead != null "> and is_read = #{isRead}</if>
+            <if test="relatedOrderId != null "> and related_order_id = #{relatedOrderId}</if>
+            <if test="createdAt != null "> and created_at = #{createdAt}</if>
+        </where>
+    </select>
+
+    <select id="selectBizUserNotificationById" parameterType="Long" resultMap="BizUserNotificationResult">
+        <include refid="selectBizUserNotificationVo"/>
+        where id = #{id}
+    </select>
+
+    <insert id="insertBizUserNotification" parameterType="BizUserNotification" useGeneratedKeys="true" keyProperty="id">
+        insert into biz_user_notification
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="title != null and title != ''">title,</if>
+            <if test="content != null and content != ''">content,</if>
+            <if test="type != null">type,</if>
+            <if test="isRead != null">is_read,</if>
+            <if test="relatedOrderId != null">related_order_id,</if>
+            <if test="createdAt != null">created_at,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="title != null and title != ''">#{title},</if>
+            <if test="content != null and content != ''">#{content},</if>
+            <if test="type != null">#{type},</if>
+            <if test="isRead != null">#{isRead},</if>
+            <if test="relatedOrderId != null">#{relatedOrderId},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBizUserNotification" parameterType="BizUserNotification">
+        update biz_user_notification
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="title != null and title != ''">title = #{title},</if>
+            <if test="content != null and content != ''">content = #{content},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="isRead != null">is_read = #{isRead},</if>
+            <if test="relatedOrderId != null">related_order_id = #{relatedOrderId},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBizUserNotificationById" parameterType="Long">
+        delete from biz_user_notification where id = #{id}
+    </delete>
+
+    <delete id="deleteBizUserNotificationByIds" parameterType="String">
+        delete from biz_user_notification where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    <!-- 统计用户未读通知数量 -->
+    <select id="countUnreadByUserId" parameterType="Long" resultType="int">
+        SELECT COUNT(*)
+        FROM biz_user_notification
+        WHERE user_id = #{userId}
+          AND is_read = 0
+    </select>
+</mapper>

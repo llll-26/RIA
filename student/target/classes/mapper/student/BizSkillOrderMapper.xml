@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.student.mapper.BizSkillOrderMapper">
+
+    <resultMap type="BizSkillOrder" id="BizSkillOrderResult">
+        <result property="id"    column="id"    />
+        <result property="skillId"    column="skill_id"    />
+        <result property="requesterId"    column="requester_id"    />
+        <result property="providerId"    column="provider_id"    />
+        <result property="appointmentTime"    column="appointment_time"    />
+        <result property="locationType"    column="location_type"    />
+        <result property="locationDetail"    column="location_detail"    />
+        <result property="status"    column="status"    />
+        <result property="proofGenerated"    column="proof_generated"    />
+        <result property="createdAt"    column="created_at"    />
+        <result property="durationHours"    column="duration_hours"    />
+        <result property="proofUrl"    column="proof_url"    />
+    </resultMap>
+
+    <sql id="selectBizSkillOrderVo">
+        select id, skill_id, requester_id, provider_id, appointment_time, location_type, location_detail, status, proof_generated, created_at, duration_hours, proof_url from biz_skill_order
+    </sql>
+
+    <select id="selectBizSkillOrderList" parameterType="BizSkillOrder" resultMap="BizSkillOrderResult">
+        <include refid="selectBizSkillOrderVo"/>
+        <where>
+            <if test="id != null "> and id = #{id}</if>
+            <if test="skillId != null "> and skill_id = #{skillId}</if>
+            <if test="requesterId != null "> and requester_id = #{requesterId}</if>
+            <if test="providerId != null "> and provider_id = #{providerId}</if>
+            <if test="appointmentTime != null "> and appointment_time = #{appointmentTime}</if>
+            <if test="locationType != null "> and location_type = #{locationType}</if>
+            <if test="locationDetail != null  and locationDetail != ''"> and location_detail = #{locationDetail}</if>
+            <if test="status != null "> and status = #{status}</if>
+            <if test="proofGenerated != null "> and proof_generated = #{proofGenerated}</if>
+            <if test="createdAt != null "> and created_at = #{createdAt}</if>
+            <if test="durationHours != null "> and duration_hours = #{durationHours}</if>
+            <if test="proofUrl != null  and proofUrl != ''"> and proof_url = #{proofUrl}</if>
+        </where>
+    </select>
+
+    <select id="selectBizSkillOrderById" parameterType="Long" resultMap="BizSkillOrderResult">
+        <include refid="selectBizSkillOrderVo"/>
+        where id = #{id}
+    </select>
+    <select id="selectOrderCount" resultType="long">
+        SELECT COUNT(*)
+        FROM biz_skill_order
+        WHERE status = 4  -- 完成状态
+    </select>
+    <select id="selectOrderStatusDistribution" resultType="map">
+        SELECT
+            CASE
+                WHEN status = 0 THEN '待确认'
+                WHEN status = 1 THEN '已同意'
+                WHEN status = 2 THEN '已拒绝'
+                WHEN status = 3 THEN '已提交凭证'
+                WHEN status = 4 THEN '已完成'
+                ELSE '未知'
+                END AS name,
+            COUNT(*) AS value
+        FROM biz_skill_order
+        WHERE status IS NOT NULL
+          AND status IN (0, 1, 2, 3, 4)
+        GROUP BY name
+    </select>
+    <select id="selectSkillOrderCountDistribution" resultType="map">
+        SELECT
+        s.title AS name,
+        COUNT(o.id) AS value
+        FROM
+        biz_skill_order o
+        INNER JOIN biz_skill_service s
+        ON o.skill_id = s.id
+        WHERE
+        o.status IN (0, 1, 3, 4)
+        AND s.status = 1
+        GROUP BY
+        s.id, s.title
+        ORDER BY
+        value DESC
+    </select>
+    <!-- 统计订单状态分布 -->
+
+    <insert id="insertBizSkillOrder" parameterType="BizSkillOrder" useGeneratedKeys="true" keyProperty="id">
+        insert into biz_skill_order
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="skillId != null">skill_id,</if>
+            <if test="requesterId != null">requester_id,</if>
+            <if test="providerId != null">provider_id,</if>
+            <if test="appointmentTime != null">appointment_time,</if>
+            <if test="locationType != null">location_type,</if>
+            <if test="locationDetail != null">location_detail,</if>
+            <if test="status != null">status,</if>
+            <if test="proofGenerated != null">proof_generated,</if>
+            <if test="createdAt != null">created_at,</if>
+            <if test="durationHours != null">duration_hours,</if>
+            <if test="proofUrl != null">proof_url,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="skillId != null">#{skillId},</if>
+            <if test="requesterId != null">#{requesterId},</if>
+            <if test="providerId != null">#{providerId},</if>
+            <if test="appointmentTime != null">#{appointmentTime},</if>
+            <if test="locationType != null">#{locationType},</if>
+            <if test="locationDetail != null">#{locationDetail},</if>
+            <if test="status != null">#{status},</if>
+            <if test="proofGenerated != null">#{proofGenerated},</if>
+            <if test="createdAt != null">#{createdAt},</if>
+            <if test="durationHours != null">#{durationHours},</if>
+            <if test="proofUrl != null">#{proofUrl},</if>
+         </trim>
+    </insert>
+
+    <update id="updateBizSkillOrder" parameterType="BizSkillOrder">
+        update biz_skill_order
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="skillId != null">skill_id = #{skillId},</if>
+            <if test="requesterId != null">requester_id = #{requesterId},</if>
+            <if test="providerId != null">provider_id = #{providerId},</if>
+            <if test="appointmentTime != null">appointment_time = #{appointmentTime},</if>
+            <if test="locationType != null">location_type = #{locationType},</if>
+            <if test="locationDetail != null">location_detail = #{locationDetail},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="proofGenerated != null">proof_generated = #{proofGenerated},</if>
+            <if test="createdAt != null">created_at = #{createdAt},</if>
+            <if test="durationHours != null">duration_hours = #{durationHours},</if>
+            <if test="proofUrl != null">proof_url = #{proofUrl},</if>
+        </trim>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteBizSkillOrderById" parameterType="Long">
+        delete from biz_skill_order where id = #{id}
+    </delete>
+
+    <delete id="deleteBizSkillOrderByIds" parameterType="String">
+        delete from biz_skill_order where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

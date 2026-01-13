@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.student.mapper.BizPointRuleMapper">
+
+    <resultMap id="BizPointRuleResult" type="com.ruoyi.student.domain.BizPointRule">
+        <id property="id" column="id"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="roleType" column="role_type"/>
+        <result property="pointValue" column="point_value"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createTime" column="created_at"/>
+        <result property="updateTime" column="updated_at"/>
+        <result property="categoryName" column="category_name"/>
+    </resultMap>
+
+    <sql id="selectPointRuleWithCategory">
+        SELECT
+            r.id,
+            r.category_id,
+            r.role_type,
+            r.point_value,
+            r.is_active,
+            r.created_at,
+            r.updated_at,
+            c.name AS category_name
+        FROM biz_point_rule r
+                 LEFT JOIN biz_skill_category c ON r.category_id = c.id
+    </sql>
+
+    <select id="selectAllPointRules" resultMap="BizPointRuleResult">
+        <include refid="selectPointRuleWithCategory"/>
+    </select>
+
+    <select id="selectByCategoryAndRole" resultMap="BizPointRuleResult">
+        <include refid="selectPointRuleWithCategory"/>
+        WHERE r.category_id = #{categoryId} AND r.role_type = #{roleType}
+    </select>
+    <select id="selectById" parameterType="Long" resultType="com.ruoyi.student.domain.BizPointRule">
+        SELECT id, rule_name, rule_type, point_value, status, create_time, update_time, remark
+        FROM biz_point_rule
+        WHERE id = #{id}
+    </select>
+
+
+    <delete id="deleteByIds">
+        DELETE FROM biz_point_rule
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    <insert id="insertPointRule" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO biz_point_rule (
+            category_id,
+            role_type,
+            point_value,
+            is_active
+        ) VALUES (
+                     #{categoryId},
+                     #{roleType},
+                     #{pointValue},
+                     #{isActive}
+                 )
+    </insert>
+
+    <update id="updatePointRule">
+        UPDATE biz_point_rule
+        <set>
+            <if test="pointValue != null">point_value = #{pointValue},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            updated_at = NOW()
+        </set>
+        WHERE category_id = #{categoryId} AND role_type = #{roleType}
+    </update>
+
+</mapper>

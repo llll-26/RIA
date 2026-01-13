@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.system.mapper.SysStudentWhitelistMapper">
+    <resultMap id="BaseResultMap" type="com.ruoyi.system.domain.SysStudentWhitelist">
+        <id property="id" column="id"/>
+        <result property="studentId" column="student_id"/>
+        <result property="major" column="major"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="importBatch" column="import_batch"/>
+    </resultMap>
+    <!-- 插入 -->
+    <insert id="insertWhitelist" parameterType="com.ruoyi.system.domain.SysStudentWhitelist">
+        INSERT INTO sys_student_whitelist (student_id, dept_id, major,import_batch)
+        VALUES (#{studentId}, #{deptId}, #{major}, #{importBatch})
+    </insert>
+
+    <!-- 更新 -->
+    <update id="updateByStudentId" parameterType="com.ruoyi.system.domain.SysStudentWhitelist">
+        UPDATE sys_student_whitelist
+        SET
+        dept_id = #{deptId},
+        major = #{major},
+        import_batch = #{importBatch}
+        WHERE student_id = #{studentId}
+    </update>
+
+    <select id="selectByStudentId" resultMap="BaseResultMap">
+        SELECT id, student_id, dept_id, major
+        FROM sys_student_whitelist
+        WHERE student_id = #{studentId}
+    </select>
+
+    <select id="existsByStudentId" parameterType="string" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM sys_student_whitelist
+        WHERE student_id = #{studentId}
+    </select>
+    <!-- 查询全部 -->
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT * FROM sys_student_whitelist ORDER BY create_time DESC
+    </select>
+</mapper>

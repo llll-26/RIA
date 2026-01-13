@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.student.mapper.BizUserPointMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BizUserPointResult" type="com.ruoyi.student.domain.BizUserPoint">
+        <id property="userId" column="user_id"/>
+        <result property="totalPoints" column="total_points"/>
+        <result property="usedPoints" column="used_points"/>
+    </resultMap>
+
+    <!-- 根据用户ID查询 -->
+    <select id="selectByUserId" parameterType="Long" resultMap="BizUserPointResult">
+        SELECT user_id, total_points, used_points
+        FROM biz_user_point
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 插入新记录 -->
+    <insert id="insert" parameterType="com.ruoyi.student.domain.BizUserPoint">
+        INSERT INTO biz_user_point (user_id, total_points, used_points)
+        VALUES (#{userId}, #{totalPoints}, #{usedPoints})
+    </insert>
+
+    <!-- 更新积分（可选） -->
+    <update id="update" parameterType="com.ruoyi.student.domain.BizUserPoint">
+        UPDATE biz_user_point
+        SET total_points = #{totalPoints},
+            used_points = #{usedPoints}
+        WHERE user_id = #{userId}
+    </update>
+
+</mapper>

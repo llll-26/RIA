@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.student.member.mapper.UserPointMapper">
+
+    <resultMap id="UserPointResultMap" type="com.ruoyi.student.member.domain.UserPoint">
+        <id property="userId" column="user_id"/>
+        <result property="totalPoints" column="total_points"/>
+        <result property="usedPoints" column="used_points"/>
+    </resultMap>
+
+    <!-- 查询用户积分 -->
+    <select id="selectByUserId" resultMap="UserPointResultMap">
+        SELECT user_id, total_points, used_points
+        FROM biz_user_point
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 初始化用户积分（首次获得/兑换时） -->
+    <insert id="insert" parameterType="com.ruoyi.student.member.domain.UserPoint">
+        INSERT INTO biz_user_point (
+            user_id,
+            total_points,
+            used_points,
+            updated_at
+        ) VALUES (
+                     #{userId},
+                     #{totalPoints},
+                     #{usedPoints},
+                     NOW()
+                 )
+    </insert>
+
+    <!-- 增加已使用积分,安全扣除积分 -->
+    <update id="addUsedPoints">
+        UPDATE biz_user_point
+        SET used_points = COALESCE(used_points, 0) + #{points}
+        WHERE user_id = #{userId}
+          AND (total_points - COALESCE(used_points, 0)) >= #{points}
+    </update>
+
+    <!-- 增加总积分（获得积分时调用） -->
+    <insert id="upsertAddTotalPoints" parameterType="map">
+        INSERT INTO biz_user_point (
+            user_id,
+            total_points,
+            used_points,
+            updated_at
+        ) VALUES (
+                     #{userId},
+                     #{points},
+                     0,
+                     NOW()
+                 )
+            ON DUPLICATE KEY UPDATE
+                                 total_points = total_points + VALUES(total_points),
+                                 updated_at = NOW();
+    </insert>
+    <select id="selectTop10WithUserInfo" resultType="com.ruoyi.student.member.domain.vo.RankVO">
+        SELECT
+            up.user_id AS userId,
+            u.nick_name AS nickName,
+            COALESCE(u.avatar, '') AS avatar,
+            up.total_points AS totalPoints
+        FROM biz_user_point up
+                 LEFT JOIN sys_user u ON up.user_id = u.user_id
+        WHERE u.status = '0'
+          AND u.del_flag = '0'
+          AND up.total_points > 0
+        ORDER BY up.total_points DESC
+            LIMIT 10
+    </select>
+    <update id="updateTotalPoints">
+        UPDATE biz_user_point
+        SET total_points = #{totalPoints}, updated_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+</mapper>

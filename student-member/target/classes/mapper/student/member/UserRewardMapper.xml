@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.student.member.mapper.UserRewardMapper">
+<!--    记录用户每一次兑换行为（谁兑了什么、用了多少分、状态如何）-->
+    <insert id="insert" parameterType="com.ruoyi.student.member.domain.UserReward" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO biz_user_reward (
+            user_id,
+            reward_id,
+            points_used,
+            code,
+            status,
+            created_at,
+            quantity
+        ) VALUES (
+                     #{userId},
+                     #{rewardId},
+                     #{pointsUsed},
+                     #{code},
+                     #{status},
+                     #{createdAt},
+                     #{quantity}
+                 )
+    </insert>
+    <!-- 已兑换奖品列表（关联 biz_reward_item） -->
+    <select id="selectRedeemedRewardsByUserId" resultType="com.ruoyi.student.member.domain.vo.RedeemedRewardVO">
+        SELECT
+            ur.id AS redeemId,
+            ur.reward_id AS rewardId,
+            ri.name,
+            ri.points_required AS pointsRequired,
+            ur.points_used AS pointsUsed,
+            ur.code,
+            ur.status,
+            ur.quantity,
+            ur.created_at AS createdAt
+        FROM biz_user_reward ur
+                 INNER JOIN biz_reward_item ri ON ur.reward_id = ri.id
+        WHERE ur.user_id = #{userId}
+        ORDER BY ur.created_at DESC
+    </select>
+
+</mapper>

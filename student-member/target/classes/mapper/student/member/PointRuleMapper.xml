@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ruoyi.student.member.mapper.PointRuleMapper">
+
+    <resultMap id="PointRuleResultMap" type="com.ruoyi.student.member.domain.PointRule">
+        <id     property="id"           column="id"           />
+        <result property="categoryId"   column="category_id"  />
+        <result property="roleType"     column="role_type"    />
+        <result property="pointValue"   column="point_value"  />
+    </resultMap>
+
+    <!-- 根据分类ID和角色类型查询积分规则 -->
+    <select id="selectByCategoryIdAndRoleType" parameterType="map" resultMap="PointRuleResultMap">
+        SELECT
+            id,
+            category_id,
+            role_type,
+            point_value
+        FROM biz_point_rule
+        WHERE category_id = #{categoryId}
+          AND role_type = #{roleType}
+            LIMIT 1
+    </select>
+
+</mapper>
